@@ -1,12 +1,12 @@
 # Netlify configuration file
 
 [build]
-  # Directory where the build output is generated
-  publish = "client/build"
-  # Folder where Netlify functions are located
-  functions = "netlify-functions"
+  base = "client"                     # Tells Netlify to cd into the client folder
+  publish = "build"                   # Inside 'client' after build runs
+  functions = "../netlify/functions" # Relative to the 'client' base directory
+  command = "npm run build"          # Will run inside the 'client' folder
 
-# Redirects to route API requests to the serverless functions
+# Redirects to route API requests to Netlify functions
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
