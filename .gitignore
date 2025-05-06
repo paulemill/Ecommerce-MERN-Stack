@@ -10,3 +10,11 @@ client/dist/
 # OS/system files
 .DS_Store
 Thumbs.db
+
+# Ignore everything in backend except models
+/backend/*
+!/backend/Models/
+
+/backend/package.json
+/backend/package-lock.json
+/backend/server.js
