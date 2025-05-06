@@ -1,0 +1,13 @@
+# Netlify configuration file
+
+[build]
+  # Directory where the build output is generated
+  publish = "client/build"
+  # Folder where Netlify functions are located
+  functions = "netlify-functions"
+
+# Redirects to route API requests to the serverless functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
