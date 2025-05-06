@@ -23,7 +23,7 @@ const SearchFeature = ({
   };
 
   return (
-    <div className="mt-20 flex justify-center items-center border border-gray-300 overflow-hidden w-85 justify-self-center rounded">
+    <div className="mt-22 flex justify-center items-center border border-gray-300 overflow-hidden w-85 justify-self-center rounded">
       <input
         type="text"
         placeholder="Search Product..."
