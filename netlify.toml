@@ -14,7 +14,6 @@
 
 # Fallback redirect to serve index.html for client-side routing (React Router)
 [[redirects]]
-  from = "/{any*}"
+  from = "/*"
   to = "/index.html"
   status = 200
-  force = true
