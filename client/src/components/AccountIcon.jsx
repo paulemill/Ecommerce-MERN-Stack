@@ -1,0 +1,16 @@
+import Login from './Login';
+
+const AccountIcon = () => {
+  //////////////////////////////////////////////////////////////
+  // RENDER
+  //////////////////////////////////////////////////////////////
+  return (
+    <>
+      <div>
+        <Login />
+      </div>
+    </>
+  );
+};
+
+export default AccountIcon;
