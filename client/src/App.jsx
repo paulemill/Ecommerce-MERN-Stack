@@ -28,8 +28,8 @@ function App() {
         <Route path="/products" element={<ProductPage />} />{' '}
         <Route path="/products/:id" element={<ProductDetailsPerItem />} />
         <Route path="/contact-us" element={<ContactUsPage />} />
-        <Route path="success" element={<SuccessPage />} />
-        <Route path="cancel" element={<CancelPage />} />
+        <Route path="/success" element={<SuccessPage />} />
+        <Route path="/cancel" element={<CancelPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
