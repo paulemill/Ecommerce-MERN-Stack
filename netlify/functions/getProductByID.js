@@ -1,8 +1,5 @@
 const mongoose = require('mongoose');
-const Product = require(path.resolve(
-  __dirname,
-  '../../backend/models/products'
-));
+const Product = require('./Models/products');
 
 // Connect to MongoDB
 const connectDB = async () => {

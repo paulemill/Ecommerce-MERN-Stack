@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
-const User = require(path.resolve(__dirname, '../../backend/models/users'));
+const User = require('./Models/users');
 
 // Utility function: Connect to MongoDB
 const connectDB = async () => {

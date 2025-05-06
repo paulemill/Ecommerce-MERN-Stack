@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require(path.resolve(__dirname, '../../backend/models/users'));
+const User = require('./Models/users');
 
 exports.handler = async (event, context) => {
   // Check if the method is GET

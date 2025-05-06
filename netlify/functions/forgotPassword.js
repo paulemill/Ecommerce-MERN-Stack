@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require(path.resolve(__dirname, '../../backend/models/users'));
+const User = require('./Models/users');
 const bcrypt = require('bcrypt');
 
 // Connect to DB
