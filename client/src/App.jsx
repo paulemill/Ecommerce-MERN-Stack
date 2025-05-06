@@ -16,7 +16,7 @@ import ProductPage from './pages/ProductPage';
 import AccountPage from './pages/AccountPage';
 import ChangePassword from './components/ChangePassword';
 
-axios.defaults.baseURL = 'http://localhost:4000/';
+// axios.defaults.baseURL = 'http://localhost:4000/'; // Not needed for netlify
 axios.defaults.withCredentials = true;
 
 function App() {

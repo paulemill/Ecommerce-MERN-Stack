@@ -20,7 +20,7 @@ export const ContextProvider = ({ children }) => {
   // Fetch the user
   const fetchUser = async () => {
     try {
-      const { data } = await axios.get('http://localhost:4000/auth/account', {
+      const { data } = await axios.get('/.netlify/functions/getProfile', {
         withCredentials: true,
       });
       setUser(data);
@@ -33,7 +33,7 @@ export const ContextProvider = ({ children }) => {
 
   const fetchCart = async () => {
     try {
-      const { data } = await axios.get('http://localhost:4000/cart', {
+      const { data } = await axios.get('/.netlify/functions/getCart', {
         withCredentials: true,
       });
       setCartSummary(data.cartSummary);
