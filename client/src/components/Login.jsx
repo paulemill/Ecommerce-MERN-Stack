@@ -48,7 +48,7 @@ const Login = () => {
         });
         toast.success('Logged in successfully!');
 
-        setTimeout(() => navigate('/account'), 1000);
+        setTimeout(() => navigate('/account'), 200);
       }
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error) {

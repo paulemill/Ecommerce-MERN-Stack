@@ -15,8 +15,8 @@ exports.handler = async (event, context) => {
       payment_method_types: ['card'],
       line_items: items,
       mode: 'payment',
-      success_url: 'http://localhost:5173/success',
-      cancel_url: 'http://localhost:5173/cancel',
+      success_url: 'https://swiftmart-mern.netlify.app/success',
+      cancel_url: 'https://swiftmart-mern.netlify.app/cancel',
     });
 
     return {
