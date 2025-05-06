@@ -5,7 +5,16 @@ const User = require('./Models/users');
 // Utility function: Connect to MongoDB
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGO_URL);
+  try {
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw new Error('Failed to connect to the database');
+  }
 };
 
 // Utility function: Middleware-style JWT auth

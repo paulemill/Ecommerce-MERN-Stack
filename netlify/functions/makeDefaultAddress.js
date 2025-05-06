@@ -2,10 +2,19 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const User = require('./Models/users');
 
-// Utility function: Connect to MongoDB
+// Connect to DB
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGO_URL);
+  try {
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw new Error('Failed to connect to the database');
+  }
 };
 
 // Utility function: Middleware-style JWT auth
@@ -20,7 +29,7 @@ const authenticate = (cookiesHeader) => {
   return jwt.verify(token, process.env.JWT_SECRET); // Returns decoded user
 };
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== 'PUT') {
     return {
       statusCode: 405,
@@ -30,10 +39,28 @@ exports.handler = async (event, context) => {
 
   try {
     // Step 1: Authenticate user
-    const decoded = authenticate(event.headers.cookie);
+    const cookiesHeader = event.headers.cookie;
+    if (!cookiesHeader) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'No cookies provided' }),
+      };
+    }
+
+    // Extract the token from the cookies
+    const tokenMatch = cookiesHeader.match(/token=([^;]+)/);
+    if (!tokenMatch) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Token not found in cookies' }),
+      };
+    }
+
+    const token = tokenMatch[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Decodes user info
     const userId = decoded.id;
 
-    // Step 2: Parse body
+    // Step 2: Parse body for address index
     const { index } = JSON.parse(event.body);
     if (index === undefined || index < 0) {
       return {
@@ -42,7 +69,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Step 3: Connect to MongoDB and find user
+    // Step 3: Connect to MongoDB and find the user
     await connectDB();
     const user = await User.findById(userId);
 

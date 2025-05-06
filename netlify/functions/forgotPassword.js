@@ -2,12 +2,6 @@ const mongoose = require('mongoose');
 const User = require('./Models/users');
 const bcrypt = require('bcrypt');
 
-// Connect to DB
-const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGO_URL);
-};
-
 // Hash and compare helpers
 const hashPassword = (password) => {
   return new Promise((resolve, reject) => {
@@ -28,6 +22,22 @@ const comparePasswords = (password, hashed) => {
 };
 
 exports.handler = async (event) => {
+  // MongoDB connection logic inside the handler
+  const connectDB = async () => {
+    if (mongoose.connection.readyState === 1) return;
+    try {
+      await mongoose.connect(process.env.MONGO_URL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log('MongoDB connected');
+    } catch (error) {
+      console.error('MongoDB connection error:', error);
+      throw new Error('Failed to connect to the database');
+    }
+  };
+
+  // Ensure method is POST
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,

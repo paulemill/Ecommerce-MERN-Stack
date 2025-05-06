@@ -5,7 +5,16 @@ const User = require('./Models/users');
 // Connect to MongoDB
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGO_URL);
+  try {
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw new Error('Failed to connect to the database');
+  }
 };
 
 // JWT middleware logic
@@ -51,6 +60,7 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Connect to MongoDB
     await connectDB();
     const user = await User.findById(userId);
     if (!user) {
@@ -71,6 +81,7 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Remove the item from the cart
     user.cart.splice(itemIndex, 1);
     await user.save();
 

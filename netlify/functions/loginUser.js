@@ -6,7 +6,16 @@ const bcrypt = require('bcrypt');
 // Connect to DB
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGO_URL);
+  try {
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw new Error('Failed to connect to the database');
+  }
 };
 
 // Compare hashed passwords
@@ -18,13 +27,14 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Method is Not Allowed' }),
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
     };
   }
 
   try {
     const { email, password } = JSON.parse(event.body);
 
+    // Validate input fields
     if (!email || !password) {
       return {
         statusCode: 400,
@@ -32,6 +42,7 @@ exports.handler = async (event) => {
       };
     }
 
+    // Validate email format
     if (!/\S+@\S+\.\S+/.test(email)) {
       return {
         statusCode: 400,
@@ -39,8 +50,10 @@ exports.handler = async (event) => {
       };
     }
 
+    // Connect to DB
     await connectDB();
 
+    // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
       return {
@@ -49,6 +62,7 @@ exports.handler = async (event) => {
       };
     }
 
+    // Validate password length
     if (password.length < 6) {
       return {
         statusCode: 400,
@@ -58,6 +72,7 @@ exports.handler = async (event) => {
       };
     }
 
+    // Compare password with hashed password in DB
     const isMatch = await comparePasswords(password, user.password);
     if (!isMatch) {
       return {
@@ -66,6 +81,7 @@ exports.handler = async (event) => {
       };
     }
 
+    // Generate JWT token
     const token = jwt.sign(
       {
         email: user.email,
@@ -77,6 +93,7 @@ exports.handler = async (event) => {
       { expiresIn: '1d' }
     );
 
+    // Send response with token in cookie
     return {
       statusCode: 200,
       headers: {

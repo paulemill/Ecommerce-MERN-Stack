@@ -5,7 +5,16 @@ const User = require('./Models/users');
 // Connect to MongoDB
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGO_URL);
+  try {
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw new Error('Failed to connect to the database');
+  }
 };
 
 // JWT middleware logic
@@ -74,7 +83,7 @@ exports.handler = async (event, context) => {
     }
 
     const currentItem = user.cart[itemIndex];
-    const newQuantity = Math.max(quantity, 1);
+    const newQuantity = Math.max(quantity, 1); // Ensure quantity is at least 1
     const unitPrice = currentItem.price / currentItem.quantity;
 
     currentItem.quantity = newQuantity;

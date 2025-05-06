@@ -2,24 +2,34 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const User = require('./Models/users');
 
-// Connect to MongoDB
-const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGO_URL);
-};
-
-// JWT middleware logic
-const authenticate = (cookieHeader) => {
-  if (!cookieHeader) throw new Error('No cookies provided');
-
-  const tokenMatch = cookieHeader.match(/token=([^;]+)/);
-  if (!tokenMatch) throw new Error('Token not found in cookies');
-
-  const token = tokenMatch[1];
-  return jwt.verify(token, process.env.JWT_SECRET);
-};
-
 exports.handler = async (event, context) => {
+  // MongoDB connection logic
+  const connectDB = async () => {
+    if (mongoose.connection.readyState === 1) return;
+    try {
+      await mongoose.connect(process.env.MONGO_URL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log('MongoDB connected');
+    } catch (error) {
+      console.error('MongoDB connection error:', error);
+      throw new Error('Failed to connect to the database');
+    }
+  };
+
+  // JWT authentication middleware
+  const authenticate = (cookieHeader) => {
+    if (!cookieHeader) throw new Error('No cookies provided');
+
+    const tokenMatch = cookieHeader.match(/token=([^;]+)/);
+    if (!tokenMatch) throw new Error('Token not found in cookies');
+
+    const token = tokenMatch[1];
+    return jwt.verify(token, process.env.JWT_SECRET);
+  };
+
+  // Ensure method is POST
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -39,7 +49,9 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Connect to MongoDB (reuse connection if already established)
     await connectDB();
+
     const user = await User.findById(userId);
     if (!user) {
       return {

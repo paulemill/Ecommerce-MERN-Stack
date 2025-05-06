@@ -18,7 +18,16 @@ const hashPassword = (password) => {
 // Connect to DB
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGO_URL);
+  try {
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw new Error('Failed to connect to the database');
+  }
 };
 
 exports.handler = async (event) => {
@@ -33,6 +42,7 @@ exports.handler = async (event) => {
     const { firstName, lastName, email, password, confirmPassword } =
       JSON.parse(event.body);
 
+    // Validate input fields
     if (!firstName || !lastName || !email || !password) {
       return {
         statusCode: 400,
@@ -40,6 +50,7 @@ exports.handler = async (event) => {
       };
     }
 
+    // Password validation
     if (password.length < 6) {
       return {
         statusCode: 400,
@@ -74,6 +85,7 @@ exports.handler = async (event) => {
       };
     }
 
+    // Validate email format
     if (!/\S+@\S+\.\S+/.test(email)) {
       return {
         statusCode: 400,
@@ -81,18 +93,22 @@ exports.handler = async (event) => {
       };
     }
 
+    // Connect to MongoDB
     await connectDB();
 
+    // Check if email already exists
     const exists = await User.findOne({ email });
     if (exists) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Email is taken already' }),
+        body: JSON.stringify({ error: 'Email is already taken' }),
       };
     }
 
+    // Hash the password
     const hashedPassword = await hashPassword(password);
 
+    // Create new user
     const user = await User.create({
       firstName,
       lastName,
@@ -100,9 +116,17 @@ exports.handler = async (event) => {
       password: hashedPassword,
     });
 
+    // Respond with user details (without password)
     return {
       statusCode: 200,
-      body: JSON.stringify(user),
+      body: JSON.stringify({
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        },
+      }),
     };
   } catch (error) {
     console.error('Register error:', error);
