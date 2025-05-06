@@ -1,8 +1,8 @@
 # netlify.toml at project root
 
 [build]
-  base = "."                             # Run everything from project root
-  publish = "client/dist"               # Vite outputs to dist inside client
+  base = "."                             
+  publish = "client/dist"               
   functions = "netlify/functions"       # Your functions are here at root/netlify/functions
   command = "npm run build"             # Use root build script
 
