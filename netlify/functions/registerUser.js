@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
 const User = require('./Models/users');
 const bcrypt = require('bcrypt');
+const connectDB = require('./utils/connectDB');
 
 // Hash password function
 const hashPassword = (password) => {
@@ -13,21 +13,6 @@ const hashPassword = (password) => {
       });
     });
   });
-};
-
-// Connect to DB
-const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) return;
-  try {
-    await mongoose.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('MongoDB connected');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw new Error('Failed to connect to the database');
-  }
 };
 
 exports.handler = async (event) => {

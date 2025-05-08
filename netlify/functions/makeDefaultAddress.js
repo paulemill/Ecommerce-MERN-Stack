@@ -1,33 +1,6 @@
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
 const User = require('./Models/users');
-
-// Connect to DB
-const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) return;
-  try {
-    await mongoose.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('MongoDB connected');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw new Error('Failed to connect to the database');
-  }
-};
-
-// Utility function: Middleware-style JWT auth
-const authenticate = (cookiesHeader) => {
-  if (!cookiesHeader) throw new Error('No cookies found');
-
-  // Extract token from "token=...;" format
-  const tokenMatch = cookiesHeader.match(/token=([^;]+)/);
-  if (!tokenMatch) throw new Error('Token not found in cookies');
-
-  const token = tokenMatch[1];
-  return jwt.verify(token, process.env.JWT_SECRET); // Returns decoded user
-};
+const connectDB = require('./utils/connectDB');
+const authenticate = require('./utils/authenticate');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'PUT') {
@@ -38,7 +11,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Step 1: Authenticate user
+    // Step 1: Authenticate user using the separate authenticate function
     const cookiesHeader = event.headers.cookie;
     if (!cookiesHeader) {
       return {
@@ -47,17 +20,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Extract the token from the cookies
-    const tokenMatch = cookiesHeader.match(/token=([^;]+)/);
-    if (!tokenMatch) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'Token not found in cookies' }),
-      };
-    }
-
-    const token = tokenMatch[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Decodes user info
+    const decoded = authenticate(cookiesHeader); // Decodes the JWT token to get user info
     const userId = decoded.id;
 
     // Step 2: Parse body for address index
@@ -69,7 +32,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Step 3: Connect to MongoDB and find the user
+    // Step 3: Connect to MongoDB using the separate connectDB function
     await connectDB();
     const user = await User.findById(userId);
 

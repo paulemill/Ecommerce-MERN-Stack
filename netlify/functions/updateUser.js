@@ -1,32 +1,6 @@
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
+const connectDB = require('./utils/connectDB');
+const authenticate = require('./utils/authenticate');
 const User = require('./Models/users');
-
-// Utility function: Connect to MongoDB
-const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) return;
-  try {
-    await mongoose.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('MongoDB connected');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw new Error('Failed to connect to the database');
-  }
-};
-
-// Utility function: Middleware-style JWT auth
-const authenticate = (cookiesHeader) => {
-  if (!cookiesHeader) throw new Error('No cookies found');
-
-  const tokenMatch = cookiesHeader.match(/token=([^;]+)/);
-  if (!tokenMatch) throw new Error('Token not found in cookies');
-
-  const token = tokenMatch[1];
-  return jwt.verify(token, process.env.JWT_SECRET); // Returns decoded user
-};
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'PUT') {
@@ -46,6 +20,7 @@ exports.handler = async (event, context) => {
 
     // Step 3: Connect to DB and find user
     await connectDB();
+
     const user = await User.findById(userId);
 
     if (!user) {

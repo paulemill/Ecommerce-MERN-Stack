@@ -1,22 +1,7 @@
-const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const User = require('./Models/users');
 const bcrypt = require('bcrypt');
-
-// Connect to DB
-const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) return;
-  try {
-    await mongoose.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('MongoDB connected');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw new Error('Failed to connect to the database');
-  }
-};
+const connectDB = require('./utils/connectDB');
 
 // Compare hashed passwords
 const comparePasswords = (password, hashed) => {
@@ -50,7 +35,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Connect to DB
+    // Connect to DB using the external connectDB function
     await connectDB();
 
     // Check if user exists

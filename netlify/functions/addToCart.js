@@ -1,17 +1,6 @@
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
+const connectDB = require('./utils/connectDB');
+const authenticate = require('./utils/authenticate');
 const User = require('./Models/users');
-
-// JWT middleware logic
-const authenticate = (cookieHeader) => {
-  if (!cookieHeader) throw new Error('No cookies provided');
-
-  const tokenMatch = cookieHeader.match(/token=([^;]+)/);
-  if (!tokenMatch) throw new Error('Token not found in cookies');
-
-  const token = tokenMatch[1];
-  return jwt.verify(token, process.env.JWT_SECRET);
-};
 
 // Calculate cart totals
 const calculateCartTotals = (cart) => {
@@ -26,21 +15,6 @@ const calculateCartTotals = (cart) => {
 };
 
 exports.handler = async (event, context) => {
-  // MongoDB connection logic inside the handler
-  const connectDB = async () => {
-    if (mongoose.connection.readyState === 1) return;
-    try {
-      await mongoose.connect(process.env.MONGO_URL, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      console.log('MongoDB connected');
-    } catch (error) {
-      console.error('MongoDB connection error:', error);
-      throw new Error('Failed to connect to the database');
-    }
-  };
-
   // Ensure method is POST
   if (event.httpMethod !== 'POST') {
     return {
@@ -50,9 +24,11 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    // Authenticate and get the userId from JWT token
     const decoded = authenticate(event.headers.cookie);
     const userId = decoded.id;
 
+    // Parse the request body for product details
     const { productId, title, price, quantity, image } = JSON.parse(event.body);
     if (!productId || !title || !price || !quantity || !image) {
       return {
@@ -64,6 +40,7 @@ exports.handler = async (event, context) => {
     // Connect to MongoDB (reuse connection if already established)
     await connectDB();
 
+    // Find the user by userId
     const user = await User.findById(userId);
     if (!user) {
       return {
@@ -74,16 +51,19 @@ exports.handler = async (event, context) => {
 
     let message = 'Item added to cart';
 
+    // Check if the product already exists in the cart
     const existingIndex = user.cart.findIndex(
       (item) => item.productId.toString() === productId.toString()
     );
 
     if (existingIndex !== -1) {
+      // Update quantity and price if the product already exists in the cart
       user.cart[existingIndex].quantity += quantity;
       user.cart[existingIndex].price =
         price * user.cart[existingIndex].quantity;
       message = 'Item quantity updated in cart';
     } else {
+      // Add the new item to the cart
       user.cart.push({
         productId,
         title,
@@ -93,12 +73,15 @@ exports.handler = async (event, context) => {
       });
     }
 
+    // Save the updated user
     await user.save();
 
+    // Calculate the new cart totals
     const { subTotal, tax, shipping, totalAmount } = calculateCartTotals(
       user.cart
     );
 
+    // Return the updated cart summary
     return {
       statusCode: 200,
       body: JSON.stringify({

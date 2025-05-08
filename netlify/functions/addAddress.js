@@ -1,34 +1,8 @@
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
+const connectDB = require('./utils/connectDB');
+const authenticate = require('./utils/authenticate');
 const User = require('./Models/users');
 
 exports.handler = async (event, context) => {
-  // MongoDB connection logic
-  const connectDB = async () => {
-    if (mongoose.connection.readyState === 1) return;
-    try {
-      await mongoose.connect(process.env.MONGO_URL, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      console.log('MongoDB connected');
-    } catch (error) {
-      console.error('MongoDB connection error:', error);
-      throw new Error('Failed to connect to the database');
-    }
-  };
-
-  // JWT authentication middleware
-  const authenticate = (cookieHeader) => {
-    if (!cookieHeader) throw new Error('No cookies provided');
-
-    const tokenMatch = cookieHeader.match(/token=([^;]+)/);
-    if (!tokenMatch) throw new Error('Token not found in cookies');
-
-    const token = tokenMatch[1];
-    return jwt.verify(token, process.env.JWT_SECRET);
-  };
-
   // Ensure method is POST
   if (event.httpMethod !== 'POST') {
     return {
@@ -38,9 +12,11 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    // Authenticate and get the userId from JWT token
     const decoded = authenticate(event.headers.cookie);
     const userId = decoded.id;
 
+    // Parse the request body for address
     const { address } = JSON.parse(event.body);
     if (!address) {
       return {
@@ -52,6 +28,7 @@ exports.handler = async (event, context) => {
     // Connect to MongoDB (reuse connection if already established)
     await connectDB();
 
+    // Find the user by userId
     const user = await User.findById(userId);
     if (!user) {
       return {
@@ -60,14 +37,16 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // If first address, mark as default
+    // If this is the user's first address, mark it as default
     if (user.address.length === 0) {
       address.isDefaultShippingAddress = true;
     }
 
+    // Add the new address and save the user
     user.address.push(address);
     await user.save();
 
+    // Return the updated user info
     return {
       statusCode: 200,
       body: JSON.stringify(user),

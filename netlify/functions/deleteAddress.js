@@ -1,34 +1,8 @@
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
+const connectDB = require('./utils/connectDB');
+const authenticate = require('./utils/authenticate');
 const User = require('./Models/users');
 
-// Extract and verify token from cookie
-const authenticate = (cookieHeader) => {
-  if (!cookieHeader) throw new Error('No cookies provided');
-
-  const tokenMatch = cookieHeader.match(/token=([^;]+)/);
-  if (!tokenMatch) throw new Error('Token not found in cookies');
-
-  const token = tokenMatch[1];
-  return jwt.verify(token, process.env.JWT_SECRET); // Decoded user info
-};
-
 exports.handler = async (event, context) => {
-  // MongoDB connection logic inside the handler
-  const connectDB = async () => {
-    if (mongoose.connection.readyState === 1) return;
-    try {
-      await mongoose.connect(process.env.MONGO_URL, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      console.log('MongoDB connected');
-    } catch (error) {
-      console.error('MongoDB connection error:', error);
-      throw new Error('Failed to connect to the database');
-    }
-  };
-
   // Ensure method is DELETE
   if (event.httpMethod !== 'DELETE') {
     return {
@@ -42,7 +16,7 @@ exports.handler = async (event, context) => {
     const decoded = authenticate(event.headers.cookie);
     const userId = decoded.id;
 
-    // 2. Parse body and get index
+    // 2. Parse body and get address index to delete
     const { index } = JSON.parse(event.body);
     if (index === undefined || index < 0) {
       return {
@@ -51,7 +25,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // 3. Connect to DB and find user
+    // 3. Connect to DB and find the user
     await connectDB();
     const user = await User.findById(userId);
     if (!user) {
@@ -61,6 +35,7 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Check if the index is valid for the addresses array
     if (index >= user.address.length) {
       return {
         statusCode: 400,
@@ -72,13 +47,15 @@ exports.handler = async (event, context) => {
     const wasDefault = user.address[index].isDefaultShippingAddress;
     user.address.splice(index, 1);
 
-    // Set a new default if needed
+    // Set a new default address if the removed one was default
     if (wasDefault && user.address.length > 0) {
       user.address[0].isDefaultShippingAddress = true;
     }
 
+    // Save the updated user document
     await user.save();
 
+    // Return the updated user data
     return {
       statusCode: 200,
       body: JSON.stringify(user),
